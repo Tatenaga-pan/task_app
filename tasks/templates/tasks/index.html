@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Django Todo アプリ</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; background: #f4f4f4; }
+        .container { max-width: 500px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        ul { list-style: none; padding: 0; }
+        li { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .completed { text-decoration: line-through; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>My Todo List</h1>
+        
+        <form action="{% url 'add_task' %}" method="POST" style="margin-bottom: 20px; display: flex; gap: 10px;">
+            {% csrf_token %}
+            <input type="text" name="title" placeholder="新しいタスクを入力" required style="flex: 1; padding: 8px;">
+
+            <input type="datetime-local" name="due_date">
+
+            <select name="recurrence">
+               <option value="none">繰り返さない</option>
+               <option value="daily">毎日</option>
+               <option value="weekly">毎週</option>
+            </select>
+
+            <button type="submit" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">追加</button>
+        </form>
+        
+        <ul>
+            {% for task in tasks %}
+                <li>
+                    <span class="{% if task.completed %}completed{% endif %}">
+                        {{ task.title }}
+                    </span>
+
+                    {% if task.due_date %}
+                        {% if task.completed %}
+                            <small style="color: #6c757d; font-size: 0.85em;">
+                               {{ task.due_date|date:"Y/m/d H:i" }}
+                            </small>
+                        {% else %}
+                            <small style="color: #e44d26; font-size: 0.85em;">
+                               {{ task.due_date|date:"Y/m/d H:i" }}
+                            </small>
+                        {% endif %}  
+                        
+                    
+
+                        {% if task.recurrence == 'daily' %}
+                             <small style="color: #28a745; font-size: 0.85em;">毎日</small>
+                        {% elif task.recurrence == 'weekly' %}
+                            <small style="color: #28a745; font-size: 0.85em;">毎週</small>
+                        {% endif %}
+                       </small>
+                    {% else %}
+                       <small style="color: #6c757d; font-size: 0.85em;">期限なし</small>
+                    {% endif %}
+
+                    <div style="display: flex; gap: 5px;">
+                        <form action="{% url 'toggle_task' task.id %}" method="POST" style="margin: 0;">
+                            {% csrf_token %}
+                            <button type="submit" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                                {% if task.completed %}戻す{% else %}完了{% endif %}
+                            </button>
+                        </form>
+
+                        <form action="{% url 'delete_task' task.id %}" method="POST" style="margin: 0;">
+                            {% csrf_token %}
+                            <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">削除</button>
+                        </form>
+                    </div>
+                </li>
+            {% empty %}
+                <li>タスクはまだありません。</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>
