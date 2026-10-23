@@ -4,6 +4,8 @@ from .models import Task
 import requests
 from django.utils import timezone
 from datetime import timedelta
+from django.db import transaction
+from django.shortcuts import render, redirect, get_object_or_404  # ← get_object_or_404を追加
 
 
 @login_required
@@ -35,10 +37,11 @@ def add_task(request):
     return redirect('task_list')
 
 @login_required
+@transaction.atomic
 def toggle_task(request, task_id):
     if request.method == 'POST':
         # URLから渡された task_id を使って、特定のタスクを1件だけ取得する
-        task = Task.objects.get(id=task_id, user=request.user)
+        task = get_object_or_404(Task, id=task_id, user=request.user)
         # 現在のステータスを反転させる（TrueならFalseに、FalseならTrueに）
         task.completed = not task.completed
         # 変更をデータベースに保存する
@@ -59,6 +62,9 @@ def toggle_task(request, task_id):
                 due_date=next_due_date,
                 recurrence=task.recurrence,
                 completed=False)
+
+            
+            #繰り返す場合、完了済みのタスクは自動消去されるようにする
             
     return redirect('task_list')
 
@@ -66,9 +72,8 @@ def toggle_task(request, task_id):
 def delete_task(request, task_id):
     if request.method == 'POST':
         # 対象のタスクを1件取得して、そのまま削除する
-        task = Task.objects.get(id=task_id, user=request.user)
+        task = get_object_or_404(Task,id=task_id, user=request.user)
         task.delete()
 
     return redirect('task_list')
 
-#python manage.py runserver

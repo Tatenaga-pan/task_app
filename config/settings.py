@@ -25,8 +25,15 @@ SECRET_KEY = 'django-insecure-4e0#m_8c2uw7qnnquix9!%6hs53y*jy5a^^frpp-_=v2(^duoa
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+#ここ、iPad用に[]内空欄に対して追加した
+ALLOWED_HOSTS = [".app.github.dev", "localhost", "127.0.0.1"]
 
+#ここもiPad用に追加した
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.app.github.dev",
+    "https://localhost:8000",
+    "http://localhost:8000",
+]
 
 # Application definition
 
@@ -118,3 +125,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 LOGIN_REDIRECT_URL = 'task_list'
+
+
+
+
