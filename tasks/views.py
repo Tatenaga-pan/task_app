@@ -13,7 +13,6 @@ def task_list(request):
     tasks = Task.objects.filter(user=request.user).order_by('due_date')
     return render (request, 'tasks/index.html',{'tasks':tasks})
 
-@login_required
 def add_task(request):
     if request.method == 'POST':
         # 画面の入力欄（name="title"）から文字を取得する
