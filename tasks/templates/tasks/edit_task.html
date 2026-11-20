@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>就活スケジュール管理 - 編集</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; background: #f4f4f4; }
+        .container { max-width: 600px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { color: #333; font-size: 1.5rem; }
+        .form-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .form-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .form-row input, .form-row select { padding: 8px; flex: 1; min-width: 120px; border: 1px solid #ccc; border-radius: 4px; }
+        textarea { padding: 8px; width: 100%; border: 1px solid #ccc; border-radius: 4px; resize: vertical; height: 100px; box-sizing: border-box; }
+        .btn-container { display: flex; gap: 10px; }
+        .btn-save { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-cancel { padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>タスクの編集</h1>
+
+        <form action="" method="POST" class="form-group">
+            {% csrf_token %}
+            <div class="form-row">
+                <input type="text" name="company_name" value="{{ task.company_name }}" placeholder="企業名" required style="flex: 2;">
+                <input type="text" name="next_action" value="{{ task.next_action }}" placeholder="次の予定" required style="flex: 2;">
+                <input type="datetime-local" name="due_date" value="{{ task.due_date|date:'Y-m-d\TH:i' }}" required style="flex: 2;">
+
+                <select name="interest_level" style="flex: 1;">
+                    <option value="3" {% if task.interest_level == 3 %}selected{% endif %}>高</option>
+                    <option value="2" {% if task.interest_level == 2 %}selected{% endif %}>中</option>
+                    <option value="1" {% if task.interest_level == 1 %}selected{% endif %}>低</option>
+                </select>
+            </div>
+            <div>
+                <textarea name="memo" placeholder="メモ">{{ task.memo|default_if_none:'' }}</textarea>
+            </div>
+
+            <div class="btn-container">
+                <button type="submit" class="btn-save">更新する</button>
+                <a href="{% url 'task_list' %}" class="btn-cancel">キャンセル</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,73 +1,89 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from .models import Task
-import requests
-from django.utils import timezone
-from datetime import timedelta
-
 
 @login_required
 def task_list(request):
+    # 未完了のタスクだけを取得
+    tasks = Task.objects.filter(user=request.user, completed=False).order_by('due_date')
+    return render(request, 'tasks/index.html', {'tasks': tasks})
 
-    # ログイン機能のため削除した行　tasks = Task.objects.all()
-    tasks = Task.objects.filter(user=request.user).order_by('due_date')
-    return render (request, 'tasks/index.html',{'tasks':tasks})
+@login_required
+def completed_task_list(request):
+    # 完了済みのタスクだけを取得
+    tasks = Task.objects.filter(user=request.user, completed=True).order_by('-due_date')
+    return render(request, 'tasks/completed.html', {'tasks': tasks})
 
+@login_required
 def add_task(request):
     if request.method == 'POST':
-        # 画面の入力欄（name="title"）から文字を取得する
-        title_text = request.POST.get('title')
-
+        company_name = request.POST.get('company_name')
+        next_action = request.POST.get('next_action')
         due_date_text = request.POST.get('due_date')
+        interest_level = request.POST.get('interest_level', 2)
+        memo = request.POST.get('memo', '')
 
-        recurrence_text = request.POST.get('recurrence', 'none')
-
-        # データベースに新しいタスクを保存する
-        if due_date_text:
-            Task.objects.create(title=title_text, user=request.user, due_date=due_date_text, recurrence=recurrence_text)
-        else:
-            # 入力されていなければ期限なしで保存
-            Task.objects.create(title=title_text, user=request.user, recurrence=recurrence_text)
-    
+        Task.objects.create(
+            user=request.user,
+            company_name=company_name,
+            next_action=next_action,
+            due_date=due_date_text,
+            interest_level=interest_level,
+            memo=memo
+        )
         
-    # 保存が終わったら、タスク一覧画面に戻る（リダイレクト）
     return redirect('task_list')
 
 @login_required
+@transaction.atomic
 def toggle_task(request, task_id):
     if request.method == 'POST':
-        # URLから渡された task_id を使って、特定のタスクを1件だけ取得する
-        task = Task.objects.get(id=task_id, user=request.user)
-        # 現在のステータスを反転させる（TrueならFalseに、FalseならTrueに）
+        task = get_object_or_404(Task, id=task_id, user=request.user)
         task.completed = not task.completed
-        # 変更をデータベースに保存する
         task.save()
 
-    if task.completed and task.recurrence != 'none' and task.due_date:
-            # 次の期限を計算する準備
-            next_due_date = task.due_date
-            
-            if task.recurrence == 'daily':
-                next_due_date += timedelta(days=1)  # 1日後
-            elif task.recurrence == 'weekly':
-                next_due_date += timedelta(weeks=1) # 1週間後
+        # 完了状態になったら完了ページへ、未完了に戻ったら未完了ページへ自動リダイレクト
+        if task.completed:
+            return redirect('completed_task_list')
+        else:
+            return redirect('task_list')
 
-            Task.objects.create(
-                user=task.user,
-                title=task.title,
-                due_date=next_due_date,
-                recurrence=task.recurrence,
-                completed=False)
-            
     return redirect('task_list')
 
 @login_required
 def delete_task(request, task_id):
     if request.method == 'POST':
-        # 対象のタスクを1件取得して、そのまま削除する
-        task = Task.objects.get(id=task_id, user=request.user)
+        task = get_object_or_404(Task, id=task_id, user=request.user)
+        # 削除されたときの所属ページに応じて戻すこともできますが、一旦安全にリファラまたは一覧へ
+        is_completed = task.completed
         task.delete()
+        
+        if is_completed:
+            return redirect('completed_task_list')
+        else:
+            return redirect('task_list')
 
     return redirect('task_list')
 
-#python manage.py runserver
+@login_required
+def edit_task(request, task_id):
+    # ログインユーザーのタスクを1件取得（なければ404エラー）
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+
+    if request.method == 'POST':
+        # フォームから送られてきたデータを取得して上書き
+        task.company_name = request.POST.get('company_name')
+        task.next_action = request.POST.get('next_action')
+        task.due_date = request.POST.get('due_date')
+        task.interest_level = request.POST.get('interest_level', 2)
+        task.memo = request.POST.get('memo', '')
+        task.save()
+
+        # 編集完了後、もともと完了していたか未完了かによって戻り先を分岐させると便利です
+        if task.completed:
+            return redirect('completed_task_list')
+        else:
+            return redirect('task_list')
+
+    return render(request, 'tasks/edit_task.html', {'task': task})

@@ -2,81 +2,111 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Django Todo アプリ</title>
+    <title>就活スケジュール管理 - 進行中</title>
     <style>
         body { font-family: sans-serif; margin: 40px; background: #f4f4f4; }
-        .container { max-width: 500px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h1 { color: #333; }
+        .container { max-width: 650px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h1 { color: #333; font-size: 1.5rem; }
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .nav-tabs a { text-decoration: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; color: #555; background: #eef2f7; }
+        .nav-tabs a.active { background: #007bff; color: white; }
         ul { list-style: none; padding: 0; }
-        li { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .completed { text-decoration: line-through; color: #888; }
+        li { padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-start; }
+
+        .form-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .form-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .form-row input, .form-row select { padding: 8px; flex: 1; min-width: 120px; border: 1px solid #ccc; border-radius: 4px; }
+        textarea { padding: 8px; width: 100%; border: 1px solid #ccc; border-radius: 4px; resize: vertical; height: 60px; box-sizing: border-box; }
+
+        .badge { background: #eef2f7; color: #007bff; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; font-weight: bold; margin-right: 6px; }
+        .interest-high { color: #ffc107; font-weight: bold; }
+        .interest-mid { color: #6c757d; }
+        .interest-low { color: #adb5bd; }
+        .memo-text { color: #555; background: #f9f9f9; padding: 6px 8px; border-radius: 4px; margin-top: 6px; font-size: 0.85em; white-space: pre-wrap; }
+        .btn-edit { background: #ffc107; color: #333; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.9em; display: inline-flex; align-items: center; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>My Todo List</h1>
-        
-        <form action="{% url 'add_task' %}" method="POST" style="margin-bottom: 20px; display: flex; gap: 10px;">
+        <h1>就活スケジュール管理</h1>
+
+        <!-- タブメニュー -->
+        <div class="nav-tabs">
+            <a href="{% url 'task_list' %}" class="active">進行中の予定</a>
+            <a href="{% url 'completed_task_list' %}">終了・完了した企業</a>
+        </div>
+
+        <!-- 新規追加フォーム -->
+        <form action="{% url 'add_task' %}" method="POST" class="form-group">
             {% csrf_token %}
-            <input type="text" name="title" placeholder="新しいタスクを入力" required style="flex: 1; padding: 8px;">
+            <div class="form-row">
+                <input type="text" name="company_name" placeholder="企業名 (例: A社)" required style="flex: 2;">
+                <input type="text" name="next_action" placeholder="次の予定 (例: 一次面接)" required style="flex: 2;">
+                <input type="datetime-local" name="due_date" required style="flex: 2;">
 
-            <input type="datetime-local" name="due_date">
-
-            <select name="recurrence">
-               <option value="none">繰り返さない</option>
-               <option value="daily">毎日</option>
-               <option value="weekly">毎週</option>
-            </select>
-
-            <button type="submit" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">追加</button>
+                <select name="interest_level" style="flex: 1;">
+                    <option value="3">高</option>
+                    <option value="2" selected>中</option>
+                    <option value="1">低</option>
+                </select>
+            </div>
+            <div>
+                <textarea name="memo" placeholder="メモ（例：持ち物、面接官の特徴、聞きたいことなど）"></textarea>
+            </div>
+            <button type="submit" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; align-self: flex-start;">追加</button>
         </form>
-        
+
+        <!-- 未完了タスク一覧 -->
         <ul>
             {% for task in tasks %}
                 <li>
-                    <span class="{% if task.completed %}completed{% endif %}">
-                        {{ task.title }}
-                    </span>
+                    <div style="flex: 1; margin-right: 15px;">
+                        <div>
+                            <span class="badge">{{ task.company_name }}</span>
 
-                    {% if task.due_date %}
-                        {% if task.completed %}
-                            <small style="color: #6c757d; font-size: 0.85em;">
-                               {{ task.due_date|date:"Y/m/d H:i" }}
-                            </small>
-                        {% else %}
-                            <small style="color: #e44d26; font-size: 0.85em;">
-                               {{ task.due_date|date:"Y/m/d H:i" }}
-                            </small>
-                        {% endif %}  
-                        
-                    
+                            {% if task.interest_level == 3 %}
+                                <span class="interest-high" title="興味度: 高">★★★</span>
+                            {% elif task.interest_level == 2 %}
+                                <span class="interest-mid" title="興味度: 中">★★☆</span>
+                            {% else %}
+                                <span class="interest-low" title="興味度: 低">★☆☆</span>
+                            {% endif %}
 
-                        {% if task.recurrence == 'daily' %}
-                             <small style="color: #28a745; font-size: 0.85em;">毎日</small>
-                        {% elif task.recurrence == 'weekly' %}
-                            <small style="color: #28a745; font-size: 0.85em;">毎週</small>
+                            <span style="margin-left: 8px; font-weight: bold;">
+                                {{ task.next_action }}
+                            </span>
+                        </div>
+
+                        <div style="margin-top: 4px;">
+                            <small style="color: #e44d26; font-size: 0.8em;">
+                                📅 {{ task.due_date|date:"Y/m/d H:i" }} まで
+                            </small>
+                        </div>
+
+                        {% if task.memo %}
+                            <div class="memo-text">📝 {{ task.memo }}</div>
                         {% endif %}
-                       </small>
-                    {% else %}
-                       <small style="color: #6c757d; font-size: 0.85em;">期限なし</small>
-                    {% endif %}
+                    </div>
 
-                    <div style="display: flex; gap: 5px;">
+                    <!-- 操作ボタン -->
+                    <div style="display: flex; gap: 5px; align-self: flex-start;">
+                        <a href="{% url 'edit_task' task.id %}" class="btn-edit">編集</a>
+
                         <form action="{% url 'toggle_task' task.id %}" method="POST" style="margin: 0;">
                             {% csrf_token %}
-                            <button type="submit" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
-                                {% if task.completed %}戻す{% else %}完了{% endif %}
+                            <button type="submit" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.9em;">
+                                完了にする
                             </button>
                         </form>
 
                         <form action="{% url 'delete_task' task.id %}" method="POST" style="margin: 0;">
                             {% csrf_token %}
-                            <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">削除</button>
+                            <button type="submit" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.9em;">削除</button>
                         </form>
                     </div>
                 </li>
             {% empty %}
-                <li>タスクはまだありません。</li>
+                <li style="color: #666; text-align: center; padding: 20px;">現在進行中の予定はありません。</li>
             {% endfor %}
         </ul>
     </div>
