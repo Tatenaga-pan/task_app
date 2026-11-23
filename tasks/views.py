@@ -78,6 +78,7 @@ def edit_task(request, task_id):
         task.due_date = request.POST.get('due_date')
         task.interest_level = request.POST.get('interest_level', 2)
         task.memo = request.POST.get('memo', '')
+        task.reminded = False
         task.save()
 
         # 編集完了後、もともと完了していたか未完了かによって戻り先を分岐させると便利です

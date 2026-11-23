@@ -1,0 +1,34 @@
+from datetime import timedelta
+from django.core.management.base import BaseCommand
+from django.utils import timezone
+from tasks.line_notify import format_task_notification, send_line_message
+from tasks.models import Task
+
+
+class Command(BaseCommand):
+    help = "期限が近づいている就活タスクのLINEリマインダーを送信します"
+
+    def handle(self, *args, **options):
+        now = timezone.now()
+        target_deadline = now + timedelta(hours=24)
+
+        due_tasks = Task.objects.filter(
+            completed=False,
+            reminded=False,
+            due_date__isnull=False,
+            due_date__lte=target_deadline,
+        ).order_by("due_date")
+
+        if not due_tasks.exists():
+            self.stdout.write("通知対象のタスクはありません。")
+            return
+
+        sent_count = 0
+        for task in due_tasks:
+            message = format_task_notification(task, action_label="期限リマインダー")
+            if send_line_message(message):
+                task.reminded = True
+                task.save(update_fields=["reminded"])
+                sent_count += 1
+
+        self.stdout.write(self.style.SUCCESS(f"LINE通知の送信完了: {sent_count}件"))
