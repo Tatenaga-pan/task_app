@@ -43,7 +43,7 @@ def toggle_task(request, task_id):
         task.completed = not task.completed
         task.save()
 
-        # 完了状態になったら完了ページへ、未完了に戻ったら未完了ページへ自動リダイレクト
+        # 完了状態になったら完了ページ未完了に戻ったら未完了ページへ自動遷移
         if task.completed:
             return redirect('completed_task_list')
         else:
@@ -55,7 +55,6 @@ def toggle_task(request, task_id):
 def delete_task(request, task_id):
     if request.method == 'POST':
         task = get_object_or_404(Task, id=task_id, user=request.user)
-        # 削除されたときの所属ページに応じて戻すこともできますが、一旦安全にリファラまたは一覧へ
         is_completed = task.completed
         task.delete()
         
@@ -81,7 +80,7 @@ def edit_task(request, task_id):
         task.reminded = False
         task.save()
 
-        # 編集完了後、もともと完了していたか未完了かによって戻り先を分岐させると便利です
+        
         if task.completed:
             return redirect('completed_task_list')
         else:

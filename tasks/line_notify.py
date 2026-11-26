@@ -11,7 +11,7 @@ def send_line_message(text: str) -> bool:
     user_id = getattr(settings, "LINE_USER_ID", "")
 
     if not token or not user_id:
-        print("[LINE通知スキップ] トークンまたはユーザーIDが未設定です。")
+        print("[LINE通知スキップ] トークンまたはユーザーIDが未設定です")
         return False
 
     headers = {
@@ -43,13 +43,13 @@ def send_line_message(text: str) -> bool:
 
 
 def format_task_notification(task, action_label: str = "期限リマインダー") -> str:
-    """就活タスクの内容をLINE通知向けテキストに整形する"""
+    """タスク内容をLINE通知向けテキストに整形"""
     interest_map = {
-        3: "★★★（高）",
-        2: "★★☆（中）",
-        1: "★☆☆（低）",
+        3: "高",
+        2: "中",
+        1: "低",
     }
-    interest_text = interest_map.get(task.interest_level, "★★☆（中）")
+    interest_text = interest_map.get(task.interest_level, "中")
 
     if task.due_date:
         local_dt = (
@@ -64,7 +64,7 @@ def format_task_notification(task, action_label: str = "期限リマインダー
         total_minutes = int(diff.total_seconds() // 60)
 
         if total_minutes < 0:
-            remaining_text = "（⚠️ 期限を過ぎています）"
+            remaining_text = "（期限を過ぎています）"
         elif total_minutes < 60:
             remaining_text = f"（あと約{total_minutes}分）"
         else:
